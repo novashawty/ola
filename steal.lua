@@ -105,10 +105,13 @@ task.spawn(function()
 end)
 
 --//---------------------------------------------------------------------------------------------------------------
+
 local Players = game:GetService("Players")
 local invisStatus = {}
 
 local localPlayer = Players.LocalPlayer
+
+local checkInvisivelAtivo = true -- variável para controlar o checkbox
 
 local function tornarVisivel(character)
 	for _, part in ipairs(character:GetDescendants()) do
@@ -167,26 +170,53 @@ local function estaInvisivel(character)
 	return total > 0 and invisiveis == total
 end
 
-while true do
-	task.wait(0.3)
+-- Função que roda o loop para verificar invisibilidade
+local function iniciarLoop()
+	spawn(function()
+		while checkInvisivelAtivo do
+			task.wait(0.3)
 
-	for _, player in ipairs(Players:GetPlayers()) do
-		if player == localPlayer then
-			continue
+			for _, player in ipairs(Players:GetPlayers()) do
+				if player == localPlayer then
+					continue
+				end
+
+				local character = player.Character
+				if not character then continue end
+
+				local estaInvi = estaInvisivel(character)
+				local estavaInvi = invisStatus[player] or false
+
+				if estaInvi and not estavaInvi then
+					adicionarNomeFlutuante(character, player.Name)
+					invisStatus[player] = true
+				elseif not estaInvi and estavaInvi then
+					removerNomeFlutuante(character)
+					invisStatus[player] = false
+				end
+			end
 		end
 
-		local character = player.Character
-		if not character then continue end
+		-- Quando desativar, remove todas as tags visuais
+		for player, status in pairs(invisStatus) do
+			if status and player.Character then
+				removerNomeFlutuante(player.Character)
+				invisStatus[player] = false
+			end
+		end
+	end)
+end
 
-		local estaInvi = estaInvisivel(character)
-		local estavaInvi = invisStatus[player] or false
-
-		if estaInvi and not estavaInvi then
-			adicionarNomeFlutuante(character, player.Name)
-			invisStatus[player] = true
-		elseif not estaInvi and estavaInvi then
-			removerNomeFlutuante(character)
-			invisStatus[player] = false
+-- Checkbox para ativar/desativar ver quem está invisível
+Window:Checkbox({
+	Value = true,
+	Label = "Ver invisíveis",
+	Callback = function(self, Value)
+		checkInvisivelAtivo = Value
+		if Value then
+			iniciarLoop()
 		end
 	end
-end
+})
+
+--//---------------------------------------------------------------------------------------------------------------
