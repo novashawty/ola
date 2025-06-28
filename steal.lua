@@ -6,8 +6,9 @@ local Humanoid = Character:WaitForChild("Humanoid")
 local ReGui = loadstring(game:HttpGet('https://raw.githubusercontent.com/depthso/Dear-ReGui/refs/heads/main/ReGui.lua'))()
 local Window = ReGui:Window({
 	Title = "",
-	Size = UDim2.fromOffset(300, 200)
+	Size = UDim2.fromOffset(430, 195)
 })
+
 --//---------------------------------------------------------------------------------------------------------------
 
 local plr = game.Players.LocalPlayer
@@ -27,12 +28,39 @@ Window:Checkbox({
 })
 
 Window:SliderInt({
-	Label = "",
+	Label = "Mola de velocidade",
 	Minimum = 0,
 	Maximum = 80,
 	Value = velocidadeDesejada,
 	Callback = function(self, value)
 		velocidadeDesejada = value
+	end
+})
+
+Window:Button({
+	Text = "Pegar kit",
+	Callback = function()
+		local items = {"Speed Coil", "Invisibility Cloak", "Quantum Cloner"}
+
+		for _, itemName in ipairs(items) do
+    		game:GetService("ReplicatedStorage").Packages.Net["RF/CoinsShopService/RequestBuy"]:InvokeServer(itemName)
+    		task.wait(0.5)
+		end
+		local Players = game:GetService("Players")
+		local localPlayer = Players.LocalPlayer
+
+		local function equipItemFromBackpack(itemName)
+			local backpack = localPlayer:WaitForChild("Backpack")
+			local character = localPlayer.Character or localPlayer.CharacterAdded:Wait()
+
+			local item = backpack:FindFirstChild(itemName)
+		if item then
+			item.Parent = character
+		end
+		end
+
+	equipItemFromBackpack("Speed Coil")
+
 	end
 })
 
@@ -73,7 +101,7 @@ task.spawn(monitorar)
 --//---------------------------------------------------------------------------------------------------------------
 
 local jumpEnabled = false
-local jumpPower = 50
+local jumpPower = 150
 Window:Checkbox({
 	Value = false,
 	Label = "Pulo",
@@ -111,7 +139,7 @@ local invisStatus = {}
 
 local localPlayer = Players.LocalPlayer
 
-local checkInvisivelAtivo = true -- variável para controlar o checkbox
+local checkInvisivelAtivo = true
 
 local function tornarVisivel(character)
 	for _, part in ipairs(character:GetDescendants()) do
@@ -170,7 +198,6 @@ local function estaInvisivel(character)
 	return total > 0 and invisiveis == total
 end
 
--- Função que roda o loop para verificar invisibilidade
 local function iniciarLoop()
 	spawn(function()
 		while checkInvisivelAtivo do
@@ -197,7 +224,6 @@ local function iniciarLoop()
 			end
 		end
 
-		-- Quando desativar, remove todas as tags visuais
 		for player, status in pairs(invisStatus) do
 			if status and player.Character then
 				removerNomeFlutuante(player.Character)
@@ -207,7 +233,6 @@ local function iniciarLoop()
 	end)
 end
 
--- Checkbox para ativar/desativar ver quem está invisível
 Window:Checkbox({
 	Value = true,
 	Label = "Ver invisíveis",
@@ -215,6 +240,85 @@ Window:Checkbox({
 		checkInvisivelAtivo = Value
 		if Value then
 			iniciarLoop()
+		end
+	end
+})
+
+--//---------------------------------------------------------------------------------------------------------------
+
+local plots = game:GetService("Workspace"):WaitForChild("Plots")
+
+local clones = {}
+
+Window:Checkbox({
+	Value = true,
+	Label = "Ver segundos das bases",
+	Callback = function(self, Value)
+		if Value then
+			for _, plot in ipairs(plots:GetChildren()) do
+				local successMain, mainPart = pcall(function()
+					return plot.Purchases.PlotBlock.Main
+				end)
+
+				if successMain and mainPart and mainPart:IsA("BasePart") then
+					local billboardGui = mainPart:FindFirstChild("BillboardGui")
+					local remainingTime = billboardGui and billboardGui:FindFirstChild("RemainingTime")
+
+					if remainingTime and remainingTime:IsA("TextLabel") then
+						local newBillboard = Instance.new("BillboardGui")
+						newBillboard.Name = "RemainingTime_Clone"
+						newBillboard.Adornee = mainPart
+						newBillboard.Size = UDim2.new(0, 200, 0, 50)
+						newBillboard.StudsOffset = Vector3.new(0, 5, 0)
+						newBillboard.AlwaysOnTop = true
+						newBillboard.Parent = mainPart
+
+						local textLabel = Instance.new("TextLabel")
+						textLabel.Size = UDim2.new(1, 0, 1, 0)
+						textLabel.BackgroundTransparency = 1
+						textLabel.TextColor3 = Color3.new(1, 1, 0)
+						textLabel.TextStrokeTransparency = 0.5
+						textLabel.TextScaled = true
+						textLabel.Font = Enum.Font.SourceSansBold
+						textLabel.Text = remainingTime.Text
+						textLabel.Parent = newBillboard
+
+						table.insert(clones, newBillboard)
+
+						coroutine.wrap(function()
+							while textLabel.Parent and remainingTime.Parent do
+								textLabel.Text = remainingTime.Text
+								task.wait(0.2)
+							end
+						end)()
+					end
+				end
+
+				local successBase, yourBase = pcall(function()
+					return plot.PlotSign:FindFirstChild("YourBase")
+				end)
+
+				if successBase and yourBase and yourBase:IsA("BillboardGui") then
+					yourBase.AlwaysOnTop = true
+				end
+			end
+		else
+			for _, clone in ipairs(clones) do
+				if clone and clone.Parent then
+					clone:Destroy()
+				end
+			end
+			clones = {}
+
+			for _, plot in ipairs(plots:GetChildren()) do
+				local successBase, yourBase = pcall(function()
+					return plot.PlotSign:FindFirstChild("YourBase")
+				end)
+
+				if successBase and yourBase and yourBase:IsA("BillboardGui") then
+					yourBase.AlwaysOnTop = false
+				end
+			end
 		end
 	end
 })
