@@ -16,11 +16,11 @@ local char = plr.Character or plr.CharacterAdded:Wait()
 local backpack = plr:WaitForChild("Backpack")
 
 local coilName = "coil"
-local velocidadeAtiva = false
+local velocidadeAtiva = true
 local velocidadeDesejada = 80
 
 Window:Checkbox({
-	Value = false,
+	Value = true,
 	Label = "Velocidade",
 	Callback = function(self, Value: boolean)
 		velocidadeAtiva = Value
@@ -100,10 +100,10 @@ task.spawn(monitorar)
 
 --//---------------------------------------------------------------------------------------------------------------
 
-local jumpEnabled = false
+local jumpEnabled = true
 local jumpPower = 150
 Window:Checkbox({
-	Value = false,
+	Value = true,
 	Label = "Pulo",
 	Callback = function(self, Value: boolean)
 		jumpEnabled = Value
