@@ -16,6 +16,10 @@ local Window = ReGui:Window({
 --//---------------------------------------------------------------------------------------------------------------
 -- Alertas para nomes específicos
 
+local TeleportService = game:GetService("TeleportService")
+local Workspace = game:GetService("Workspace")
+local Camera = Workspace.CurrentCamera
+
 local nomesAlvos = {
     "Los Tralaleritos",
     "La Vacca Saturno Saturnita",
@@ -23,7 +27,7 @@ local nomesAlvos = {
     "Graipuss Medussi"
 }
 
-local function mostrarAlertas()
+local function verificarETeleportar()
     local encontrados = {}
     for _, nome in ipairs(nomesAlvos) do
         if Workspace:FindFirstChild(nome) then
@@ -31,33 +35,38 @@ local function mostrarAlertas()
         end
     end
 
-    if #encontrados == 0 then return end
-
-    local alertas = {}
-    local startY = 100
-    for i, nome in ipairs(encontrados) do
-        local alerta = Drawing.new("Text")
-        alerta.Text = nome
-        alerta.Size = 28
-        alerta.Center = true
-        alerta.Outline = true
-        alerta.Font = 2
-        alerta.Color = Color3.new(1, 0.2, 0.2)
-        alerta.Position = Vector2.new(Camera.ViewportSize.X / 2, startY + (i - 1) * 35)
-        alerta.Visible = true
-        table.insert(alertas, alerta)
-    end
-
-    task.delay(10, function()
-        for _, alerta in ipairs(alertas) do
-            if alerta then
-                alerta:Remove()
-            end
+    if #encontrados > 0 then
+        local alertas = {}
+        local startY = 100
+        for i, nome in ipairs(encontrados) do
+            local alerta = Drawing.new("Text")
+            alerta.Text = nome
+            alerta.Size = 28
+            alerta.Center = true
+            alerta.Outline = true
+            alerta.Font = 2
+            alerta.Color = Color3.new(1, 0.2, 0.2)
+            alerta.Position = Vector2.new(Camera.ViewportSize.X / 2, startY + (i - 1) * 35)
+            alerta.Visible = true
+            table.insert(alertas, alerta)
         end
-    end)
+
+        task.delay(10, function()
+            for _, alerta in ipairs(alertas) do
+                if alerta then
+                    alerta:Remove()
+                end
+            end
+        end)
+    elseif _G.serverHopAtivo then
+        local player = game.Players.LocalPlayer
+        pcall(function()
+            TeleportService:Teleport(game.PlaceId, player)
+        end)
+    end
 end
 
-mostrarAlertas()
+verificarETeleportar()
 
 --//---------------------------------------------------------------------------------------------------------------
 -- Compra e equipagem de itens
