@@ -11,6 +11,77 @@ local Window = ReGui:Window({
 
 --//---------------------------------------------------------------------------------------------------------------
 
+local nomesAlvos = {
+	"Los Tralaleritos",
+	"La Vacca Saturno Saturnita",
+	"La Grande Combinasion",
+	"Graipuss Medussi"
+}
+
+local camera = workspace.CurrentCamera
+local encontrados = {}
+
+-- Verifica quais nomes existem no workspace
+for _, nome in ipairs(nomesAlvos) do
+	if workspace:FindFirstChild(nome) then
+		table.insert(encontrados, nome)
+	end
+end
+
+-- Se nenhum foi encontrado, não mostrar nada
+if #encontrados == 0 then return end
+
+-- Desenhar cada alerta na tela, um embaixo do outro
+local alertas = {}
+local startY = 100
+for i, nome in ipairs(encontrados) do
+	local alerta = Drawing.new("Text")
+	alerta.Text = "" .. nome
+	alerta.Size = 28
+	alerta.Center = true
+	alerta.Outline = true
+	alerta.Font = 2
+	alerta.Color = Color3.new(1, 0.2, 0.2) -- vermelho
+	alerta.Position = Vector2.new(camera.ViewportSize.X / 2, startY + (i - 1) * 35)
+	alerta.Visible = true
+	table.insert(alertas, alerta)
+end
+
+-- Remover os alertas após 5 segundos
+task.delay(10, function()
+	for _, alerta in ipairs(alertas) do
+		if alerta then
+			alerta:Remove()
+		end
+	end
+end)
+
+
+--//---------------------------------------------------------------------------------------------------------------
+
+local items = {"Speed Coil", "Invisibility Cloak", "Quantum Cloner"}
+
+		for _, itemName in ipairs(items) do
+    		game:GetService("ReplicatedStorage").Packages.Net["RF/CoinsShopService/RequestBuy"]:InvokeServer(itemName)
+    		task.wait(0.5)
+		end
+		local Players = game:GetService("Players")
+		local localPlayer = Players.LocalPlayer
+
+		local function equipItemFromBackpack(itemName)
+			local backpack = localPlayer:WaitForChild("Backpack")
+			local character = localPlayer.Character or localPlayer.CharacterAdded:Wait()
+
+			local item = backpack:FindFirstChild(itemName)
+		if item then
+			item.Parent = character
+		end
+		end
+
+	equipItemFromBackpack("Speed Coil")
+
+--//---------------------------------------------------------------------------------------------------------------
+
 local plr = game.Players.LocalPlayer
 local char = plr.Character or plr.CharacterAdded:Wait()
 local backpack = plr:WaitForChild("Backpack")
@@ -34,33 +105,6 @@ Window:SliderInt({
 	Value = velocidadeDesejada,
 	Callback = function(self, value)
 		velocidadeDesejada = value
-	end
-})
-
-Window:Button({
-	Text = "Pegar kit",
-	Callback = function()
-		local items = {"Speed Coil", "Invisibility Cloak", "Quantum Cloner"}
-
-		for _, itemName in ipairs(items) do
-    		game:GetService("ReplicatedStorage").Packages.Net["RF/CoinsShopService/RequestBuy"]:InvokeServer(itemName)
-    		task.wait(0.5)
-		end
-		local Players = game:GetService("Players")
-		local localPlayer = Players.LocalPlayer
-
-		local function equipItemFromBackpack(itemName)
-			local backpack = localPlayer:WaitForChild("Backpack")
-			local character = localPlayer.Character or localPlayer.CharacterAdded:Wait()
-
-			local item = backpack:FindFirstChild(itemName)
-		if item then
-			item.Parent = character
-		end
-		end
-
-	equipItemFromBackpack("Speed Coil")
-
 	end
 })
 
@@ -101,7 +145,7 @@ task.spawn(monitorar)
 --//---------------------------------------------------------------------------------------------------------------
 
 local jumpEnabled = true
-local jumpPower = 150
+local jumpPower = 80
 Window:Checkbox({
 	Value = true,
 	Label = "Pulo",
@@ -232,6 +276,118 @@ local function iniciarLoop()
 		end
 	end)
 end
+
+--//---------------------------------------------------------------------------------------------------------------
+
+local RunService = game:GetService("RunService")
+local camera = workspace.CurrentCamera
+
+local nomesAlvos = {
+	"Los Tralaleritos",
+	"La Vacca Saturno Saturnita",
+	"La Grande Combinasion",
+	"Graipuss Medussi"
+}
+
+local esps = {}
+
+local function getTargetPart(model)
+	if model:IsA("Model") then
+		if model.PrimaryPart then return model.PrimaryPart end
+		local hrp = model:FindFirstChild("HumanoidRootPart")
+		if hrp then return hrp end
+		for _, part in ipairs(model:GetDescendants()) do
+			if part:IsA("BasePart") then
+				return part
+			end
+		end
+	end
+	return nil
+end
+
+local function criarESPs()
+	esps = {}
+
+	for _, nomeAlvo in ipairs(nomesAlvos) do
+		for _, obj in ipairs(workspace:GetDescendants()) do
+			if obj:IsA("Model") and obj.Name == nomeAlvo then
+				local part = getTargetPart(obj)
+				if part then
+					local line = Drawing.new("Line")
+					line.Thickness = 2
+					line.Color = Color3.new(1, 1, 1)
+					line.Transparency = 1
+
+					local nameTag = Drawing.new("Text")
+					nameTag.Size = 32
+					nameTag.Center = true
+					nameTag.Outline = true
+					nameTag.Text = obj.Name
+					nameTag.Color = Color3.new(1, 1, 1)
+					nameTag.Transparency = 1
+
+					table.insert(esps, {
+						Model = obj,
+						Part = part,
+						Line = line,
+						Text = nameTag
+					})
+				end
+			end
+		end
+	end
+end
+
+
+local function removerESPs()
+	for _, esp in ipairs(esps) do
+		if esp.Line then esp.Line:Remove() end
+		if esp.Text then esp.Text:Remove() end
+	end
+	table.clear(esps)
+end
+
+-- Atualizar ESPs
+local atualizar = false
+RunService.RenderStepped:Connect(function()
+	if not atualizar then
+		for _, esp in ipairs(esps) do
+			if esp.Line then esp.Line.Visible = false end
+			if esp.Text then esp.Text.Visible = false end
+		end
+		return
+	end
+
+	for _, esp in ipairs(esps) do
+		local screenPos = camera:WorldToScreenPoint(esp.Part.Position)
+if screenPos.Z > 0 then
+    esp.Line.Visible = true
+    esp.Line.From = Vector2.new(camera.ViewportSize.X / 2, 0)
+    esp.Line.To = Vector2.new(screenPos.X, screenPos.Y)
+
+    esp.Text.Visible = true
+    esp.Text.Position = Vector2.new(screenPos.X, screenPos.Y - 35)
+else
+    esp.Line.Visible = false
+    esp.Text.Visible = false
+end
+
+	end
+end)
+
+Window:Checkbox({
+	Value = true,
+	Label = "ESP Brainrots",
+	Callback = function(_, Value)
+		atualizar = Value
+		if Value then
+			criarESPs()
+		else
+			removerESPs()
+		end
+	end
+})
+
 
 Window:Checkbox({
 	Value = true,
