@@ -24,7 +24,8 @@ local nomesAlvos = {
     "Los Tralaleritos",
     "La Vacca Saturno Saturnita",
     "La Grande Combinasion",
-    "Graipuss Medussi"
+    "Graipuss Medussi",
+    "Tralalero Tralala"
 }
 
 local function verificarETeleportar()
